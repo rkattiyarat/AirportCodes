@@ -1,25 +1,37 @@
 "use strict";
-import { Dataset } from 'data.js';
 
-const path = 'https://datahub.io/core/airport-codes/datapackage.json'
+const path = 'https://gist.githubusercontent.com/tdreyno/4278655/raw/7b0762c09b519f40397e4c3e100b097d861f5588/airports.json';
+let airportNames = {};
 
-// We're using self-invoking function here as we want to use async-await syntax:
-;(async () => {
-  const dataset = await Dataset.load(path)
-  // get list of all resources:
-  for (const id in dataset.resources) {
-    console.log(dataset.resources[id]._descriptor.name)
-  }
-  // get all tabular data(if exists any)
-  for (const id in dataset.resources) {
-    if (dataset.resources[id]._descriptor.format === "csv") {
-      const file = dataset.resources[id]
-      // Get a raw stream
-      const stream = await file.stream()
-      // entire file as a buffer (be careful with large files!)
-      const buffer = await file.buffer
-      // print data
-      stream.pipe(process.stdout)
+async function loadAirportNames() {
+    console.log("fetching")
+    let response = await fetch(path);
+    let data = await response.json();
+    console.log("data is",data.length)
+    for (let airport of data) {
+        airportNames[airport.code] = airport.name;
     }
-  }
-})()
+    console.log(airportNames["JFK"]);
+}
+
+function lookup(event){
+    event.preventDefault();
+    let input = document.getElementById("airport-code").value;
+    let lower = input.toUpperCase();
+    console.log(lower)
+    document.getElementById("output").innerHTML=airportNames[lower];
+    return false;
+}
+
+loadAirportNames();
+
+function main() {
+    document.getElementById("airport-code").value = "";
+//document.getElementById("airport-code").addEventListener("submit",lookup);
+
+//document.getElementById("airport-code").addEventListener("change",lookup);
+
+document.getElementById("inform").addEventListener("submit",lookup);
+
+document.getElementById("inform").addEventListener("change",lookup);
+}
